@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>삼공 입대일 & 개똥님 시험 시작</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#05060f;--fg:#f4f1ff;--dim:#8a86b0;--a:#ffd36b;--b:#ff5fa2;--c:#6bd6ff}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#05060f}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;overflow:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+.wrap{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;text-align:center;padding:16px}
+.eyebrow{letter-spacing:.5em;font-size:clamp(20px,1.6vw,16px);color:var(--dim);text-transform:uppercase}
+.date{font-size:clamp(34px,9vw,110px);font-weight:900;letter-spacing:.06em;background:linear-gradient(90deg,var(--a),var(--b),var(--c),var(--a));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 8s linear infinite;text-shadow:0 0 40px rgba(255,95,162,.25)}
+@keyframes flow{to{background-position:300% 0}}
+.timer{display:flex;gap:clamp(8px,2vw,28px);flex-wrap:nowrap;justify-content:center}
+.box{min-width:clamp(62px,17vw,170px);padding:clamp(10px,2vw,26px) clamp(6px,1.5vw,20px);border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.04);backdrop-filter:blur(8px);box-shadow:0 0 60px rgba(107,214,255,.08),inset 0 0 30px rgba(255,255,255,.03)}
+.num{font-size:clamp(34px,10vw,130px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1;transition:transform .25s}
+.num.tick{transform:scale(1.08);color:var(--a)}
+.lab{margin-top:8px;font-size:clamp(10px,1.4vw,15px);letter-spacing:.3em;color:var(--dim)}
+.bar{width:min(86vw,760px);height:6px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c),var(--b),var(--a));box-shadow:0 0 18px var(--b);transition:width 1s}
+.sub{font-size:clamp(12px,1.8vw,18px);color:var(--dim)}
+.msg{font-size:clamp(28px,7vw,90px);font-weight:900;display:none}
+.done .timer,.done .bar,.done .sub{display:none}
+.done .msg{display:block;animation:pop 1s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.2);opacity:0}}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5}
+.flash.go{animation:fl 1.2s ease-out}
+@keyframes fl{0%{opacity:.9}100%{opacity:0}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="flash" id="flash"></div>
+<div class="wrap" id="wrap">
+  <div class="eyebrow" id="eb">삼공 입대일 & 개똥님 시험 시작</div>
+  <div class="date" id="date">2026 / 10 / 13</div>
+  <div class="msg" id="msg">삼공님 입대 축하해용! -곧 전역하는 병장 시우가</div>
+  <div class="timer">
+    <div class="box"><div class="num" id="d">00</div><div class="lab">DAYS</div></div>
+    <div class="box"><div class="num" id="h">00</div><div class="lab">HOURS</div></div>
+    <div class="box"><div class="num" id="m">00</div><div class="lab">MIN</div></div>
+    <div class="box"><div class="num" id="s">00</div><div class="lab">SEC</div></div>
+  </div>
+  <div class="bar"><i id="p"></i></div>
+  <div class="sub" id="sub"></div>
+</div>
+<script>
+(function(){
+  var TARGET=new Date(2026,9,13,0,0,0).getTime(); // 2026-10-13 00:00 로컬
+  var START=new Date(2026,9,1,0,0,0).getTime();   // 진행바 시작점
+  var cv=document.getElementById('c'),ctx=cv.getContext('2d'),W,H,DPR=Math.min(devicePixelRatio||1,2);
+  function rs(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
+  rs();addEventListener('resize',rs);
+
+  var stars=[];for(var i=0;i<220;i++)stars.push({x:Math.random(),y:Math.random(),z:Math.random()*.9+.1,t:Math.random()*6});
+  var fw=[],parts=[],celebrating=false,lastLaunch=0;
+  var cols=['#ffd36b','#ff5fa2','#6bd6ff','#b58bff','#7dffb2','#fff'];
+
+  function launch(x,y){
+    var col=cols[Math.floor(Math.random()*cols.length)],n=70+Math.floor(Math.random()*50);
+    for(var i=0;i<n;i++){var a=Math.PI*2*i/n,v=1.5+Math.random()*4.2;
+      parts.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,c:col,s:1.2+Math.random()*1.6})}
+  }
+  function rocket(){fw.push({x:Math.random()*W*.8+W*.1,y:H,ty:H*(.12+Math.random()*.35),v:9+Math.random()*4})}
+
+  function draw(now){
+    ctx.fillStyle='rgba(5,6,15,.28)';ctx.fillRect(0,0,W,H);
+    // 별 + 은은한 성운
+    var g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.7);
+    g.addColorStop(0,'rgba(120,70,200,.10)');g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    for(var i=0;i<stars.length;i++){var s=stars[i];
+      s.y+=.00012*s.z*(celebrating?6:1);if(s.y>1)s.y=0;
+      var tw=.5+.5*Math.sin(now/600+s.t);
+      ctx.globalAlpha=.25+.75*tw*s.z;ctx.fillStyle='#fff';
+      ctx.fillRect(s.x*W,s.y*H,s.z*1.8,s.z*1.8)}
+    ctx.globalAlpha=1;
+    // 불꽃
+    if(celebrating&&now-lastLaunch>260){rocket();if(Math.random()<.5)rocket();lastLaunch=now}
+    for(i=fw.length-1;i>=0;i--){var r=fw[i];r.y-=r.v;
+      ctx.fillStyle='#fff';ctx.fillRect(r.x,r.y,2,8);
+      if(r.y<=r.ty){launch(r.x,r.y);fw.splice(i,1)}}
+    for(i=parts.length-1;i>=0;i--){var p=parts[i];
+      p.x+=p.vx;p.y+=p.vy;p.vx*=.985;p.vy=p.vy*.985+.045;p.l-=.011;
+      if(p.l<=0){parts.splice(i,1);continue}
+      ctx.globalAlpha=p.l;ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,6.3);ctx.fill()}
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw)
+  }
+  requestAnimationFrame(draw);
+
+  // 클릭하면 불꽃
+  addEventListener('pointerdown',function(e){launch(e.clientX,e.clientY)});
+
+  var els={d:d,h:h,m:m,s:s},prev={};
+  function pad(n){return n<10?'0'+n:''+n}
+  function set(k,v){
+    if(prev[k]!==v){els[k].textContent=v;els[k].classList.add('tick');
+      (function(el){setTimeout(function(){el.classList.remove('tick')},220)})(els[k]);prev[k]=v}
+  }
+  var wrap=document.getElementById('wrap'),sub=document.getElementById('sub'),eb=document.getElementById('eb');
+  var urlForce=/[?&]test/.test(location.search);
+
+  function celebrate(){
+    if(celebrating)return;celebrating=true;wrap.classList.add('done');
+    eb.textContent='2026 · 10 · 13';
+    var f=document.getElementById('flash');f.classList.add('go');
+    for(var i=0;i<6;i++)setTimeout(rocket,i*180);
+  }
+  function tick(){
+    var now=Date.now(),diff=TARGET-now;
+    if(urlForce)diff=0;
+    if(diff<=0){celebrate();return}
+    var sec=Math.floor(diff/1000);
+    set('d',pad(Math.floor(sec/86400)));
+    set('h',pad(Math.floor(sec%86400/3600)));
+    set('m',pad(Math.floor(sec%3600/60)));
+    set('s',pad(sec%60));
+    var pr=Math.max(0,Math.min(1,(now-START)/(TARGET-START)));
+    document.getElementById('p').style.width=(pr*100).toFixed(2)+'%';
+    sub.textContent='진행률 '+(pr*100).toFixed(1)+'%  ·  화면을 터치하면 불꽃이 터져요';
+    if(sec<60)eb.textContent='FINAL COUNTDOWN';
+    else if(sec<86400)eb.textContent='TOMORROW IS THE DAY';
+  }
+  tick();setInterval(tick,250);
+})();
+</script>
+</body>
+</html>
